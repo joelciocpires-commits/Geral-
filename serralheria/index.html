@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serralheria – Móveis Industriais Metalom</title>
+<style>
+  :root{--bg:#f5f5f4;--card:#fff;--tx:#1c1917;--mut:#78716c;--ac:#c2410c;--bd:#e7e5e4}
+  @media (prefers-color-scheme:dark){:root{--bg:#1c1917;--card:#292524;--tx:#fafaf9;--mut:#a8a29e;--ac:#fb923c;--bd:#44403c}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx);line-height:1.5}
+  header{padding:40px 16px 24px;max-width:960px;margin:0 auto}
+  h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem)}
+  h1 span{color:var(--ac)}
+  header p{margin:0;color:var(--mut)}
+  main{max-width:960px;margin:0 auto;padding:0 16px 48px}
+  .bar{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 20px}
+  input,select{padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font-size:1rem}
+  input{flex:1;min-width:180px}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;flex:1;min-width:130px}
+  .stat b{display:block;font-size:1.5rem;color:var(--ac)}
+  .stat small{color:var(--mut)}
+  h2{font-size:1.15rem;margin:28px 0 12px;border-left:4px solid var(--ac);padding-left:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px}
+  .card .n{font-size:2rem;font-weight:700;color:var(--ac);line-height:1}
+  .card .t{font-weight:600}
+  .card .m{color:var(--mut);font-size:.85rem}
+  .btns{display:flex;gap:8px;margin-top:auto;padding-top:10px}
+  .btns a{flex:1;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-size:.9rem;font-weight:600}
+  .v{background:var(--ac);color:#fff}
+  .d{border:1px solid var(--bd);color:var(--tx)}
+  .empty{display:none;color:var(--mut);text-align:center;padding:30px}
+  footer{max-width:960px;margin:0 auto;padding:0 16px 40px;color:var(--mut);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Serralheria <span>·</span> Móveis Industriais</h1>
+  <p>Catálogo de projetos Metalom organizado por categoria. Clique para abrir o PDF.</p>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat"><b id="sFiles">0</b><small>arquivos PDF</small></div>
+    <div class="stat"><b id="sProj">0</b><small>projetos (soma dos nomes)</small></div>
+    <div class="stat"><b id="sSize">0</b><small>MB no total</small></div>
+  </div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Buscar projeto…">
+    <select id="ord">
+      <option value="qtd">Ordenar: nº de projetos</option>
+      <option value="nome">Ordenar: nome</option>
+      <option value="mb">Ordenar: tamanho</option>
+    </select>
+  </div>
+  <div id="out"></div>
+  <p class="empty" id="empty">Nenhum arquivo encontrado.</p>
+</main>
+<footer>Os PDFs ficam no Google Drive (pasta "MÓVEIS INDUSTRIAIS METALOM"). Se publicar este site, confirme que o compartilhamento dos arquivos permite acesso a quem tem o link.</footer>
+
+<script>
+const base = "https://drive.google.com/file/d/";
+const files = [
+  {cat:"Catálogos Metalom", nome:"300 Projetos de móveis",           qtd:300, mb:14.7, id:"1sLr5IpA1RZ6B_BNB6oiWo5EGi3GJcdfZ"},
+  {cat:"Catálogos Metalom", nome:"80 Projetos móveis (Metalom)",     qtd:80,  mb:15.5, id:"1tZMMgrseHQMh3zBBr6AJ6rmpahAXfR9a"},
+  {cat:"Pacotes de projetos", nome:"80 Projetos",                    qtd:80,  mb:5.5,  id:"1t0In3Do4-ZFyYntvfN8eiqItudP30V4e"},
+  {cat:"Pacotes de projetos", nome:"50 Projetos",                    qtd:50,  mb:35.4, id:"1QnIPjdFbxHlk7ayCz6vxf8seLv2WMjy3"},
+  {cat:"Pacotes de projetos", nome:"+30 Projetos",                   qtd:30,  mb:79.7, id:"1z25-X8NRrqiPKAJnA_oxKCWf22AhN3tS"},
+  {cat:"Pacotes de projetos", nome:"30 Projetos",                    qtd:30,  mb:2.4,  id:"1xrIt20w6CaN-IB7zxjV_4n19id-RUWbp"},
+  {cat:"Pacotes de projetos", nome:"22 Projetos – Móveis industriais",qtd:22, mb:22.4, id:"1ATtnS_lT3gcLXTjQeXScdBlaxLZXKGxZ"},
+  {cat:"Pacotes de projetos", nome:"+20 Projetos",                   qtd:20,  mb:15.2, id:"1rPsLKq4u-xIunHbutIw_c-FXamG6YysN"}
+];
+const $ = id => document.getElementById(id);
+function render(){
+  const q = $("q").value.toLowerCase(), o = $("ord").value;
+  let l = files.filter(f => f.nome.toLowerCase().includes(q) || f.cat.toLowerCase().includes(q));
+  l.sort((a,b)=> o==="nome" ? a.nome.localeCompare(b.nome,"pt") : o==="mb" ? b.mb-a.mb : b.qtd-a.qtd);
+  const cats = [...new Set(l.map(f=>f.cat))];
+  $("out").innerHTML = cats.map(c => `<h2>${c}</h2><div class="grid">` +
+    l.filter(f=>f.cat===c).map(f => `
+      <div class="card">
+        <div class="n">${f.qtd}</div>
+        <div class="t">${f.nome}</div>
+        <div class="m">PDF · ${f.mb.toFixed(1).replace(".",",")} MB</div>
+        <div class="btns">
+          <a class="v" href="${base}${f.id}/view" target="_blank" rel="noopener">Abrir</a>
+          <a class="d" href="https://drive.google.com/uc?export=download&id=${f.id}" target="_blank" rel="noopener">Baixar</a>
+        </div>
+      </div>`).join("") + `</div>`).join("");
+  $("empty").style.display = l.length ? "none" : "block";
+}
+$("sFiles").textContent = files.length;
+$("sProj").textContent = files.reduce((s,f)=>s+f.qtd,0);
+$("sSize").textContent = Math.round(files.reduce((s,f)=>s+f.mb,0));
+$("q").oninput = render; $("ord").onchange = render;
+render();
+</script>
+</body>
+</html>
